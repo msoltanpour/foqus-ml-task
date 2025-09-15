@@ -6,17 +6,44 @@ TransformType = Callable[[torch.Tensor, ], torch.Tensor]
 
 
 class Normalize(nn.Module):
-    """Normalizes images to have consistent statistics."""
-    def forward(self, coil_images: torch.tensor) -> torch.Tensor:
-        """Apply normalization to coil images.
+    """
+    Per-sample normalization for multi-coil complex data.
 
-        Args:
-            coil_images: Coil images with shape (coils, height, width, 2).
+    Input  : (C, H, W, 2) where the last dim is [real, imag]
+    Strategy:
+      - compute magnitude = sqrt(real^2 + imag^2)
+      - compute mean/std over the whole sample (all coils & pixels)
+      - apply (x - mean)/std to BOTH real & imag using magnitude stats
+    """
 
-        Returns:
-            Normalized coil images with the same shape as the input.
-        """
-        return coil_images
+    def __init__(self, eps: float = 1e-8, clip: float | None = None):
+        super().__init__()
+        self.eps = eps
+        self.clip = clip
+
+    def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
+        if not isinstance(coil_images, torch.Tensor):
+            coil_images = torch.as_tensor(coil_images)
+
+        if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
+            raise ValueError(f"Normalize expects (C,H,W,2), got {tuple(coil_images.shape)}")
+
+        real = coil_images[..., 0]
+        imag = coil_images[..., 1]
+        mag = torch.sqrt(real ** 2 + imag ** 2)
+
+        mean = mag.mean()
+        std = mag.std()
+        if std < self.eps:
+            std = torch.tensor(1.0, dtype=coil_images.dtype, device=coil_images.device)
+
+        real_n = (real - mean) / std
+        imag_n = (imag - mean) / std
+        out = torch.stack((real_n, imag_n), dim=-1)
+
+        if self.clip is not None and self.clip > 0:
+            out = torch.clamp(out, -self.clip, self.clip)
+        return out
 
 
 class EquispacedUndersample(nn.Module):
