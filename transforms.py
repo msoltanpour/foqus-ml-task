@@ -49,8 +49,7 @@ class Normalize(nn.Module):
         return out
 
 
-import torch
-import torch.nn as nn
+
 
 class EquispacedUndersample(nn.Module):
     """
@@ -134,23 +133,24 @@ class Augmentation(nn.Module):
         return x_aug
 
 
+
+
 class ToCompatibleTensor(nn.Module):
-    """Converts coil images to a format we can pass to our model."""
-    def forward(self, coil_images: torch.Tensor):
-        """Convert coil images to a format we can pass to our model.
+    """
+    Convert (C, H, W, 2) -> (channels, H, W) where channels = C*2 (real & imag stacked).
 
-        Specifically, we need to go from a shape of (coils, height, width, 2)
-        to a shape of (channels, height, width). When doing so, be sure to
-        consider any disadvantages of your approach.
-
-        Args:
-            coil_images: Coil images with shape (coils, height, width, 2)
-
-        Returns:
-            A tensor with shape (channels, height, width) that will be
-                compatible with PyTorch's 2D layers (e.g., Conv2d) when batched
-        """
-        return coil_images
+    Rationale:
+      - Keeps phase info explicit.
+      - Simple, model-agnostic; works with standard Conv2d.
+      - Trade-off: doubles channels vs magnitude-only or coil-combined inputs.
+    """
+    def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
+        if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
+            raise ValueError(f"ToCompatibleTensor expects (C,H,W,2), got {tuple(coil_images.shape)}")
+        C, H, W, _ = coil_images.shape
+        # (C, H, W, 2) -> (C*2, H, W)
+        out = coil_images.permute(0, 3, 1, 2).reshape(C * 2, H, W).contiguous()
+        return out
 
 
 # ========== HELPER/UTILITY FUNCTIONS ==========
