@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+venv/
+ENV/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Logs & cache
+*.log
+*.out
+*.err
+*.tmp
+*.cache
+.pytest_cache/
+.mypy_cache/
+
+# OS
+.DS_Store
