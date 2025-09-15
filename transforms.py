@@ -1,6 +1,9 @@
 from collections.abc import Callable
 import torch
 import torch.nn as nn
+import math
+import torch.nn.functional as F
+
 
 TransformType = Callable[[torch.Tensor, ], torch.Tensor]
 
@@ -90,26 +93,45 @@ class EquispacedUndersample(nn.Module):
         return ifft(k)
 
 
+
 class Augmentation(nn.Module):
-    """Transform which augments coil images.
-
-    This must be one of:
-        - random crop
-        - random rotation (NOT only 90 degree increments)
-        - random affine transformation
-        - random resize
-        - random intensity inversion
     """
+    Light image-domain augmentations for complex data:
+      - small rotation (±max_rot_deg)
+      - small translation (±max_shift_px)
+    Applied identically to real & imag channels.
+    """
+
+    def __init__(self, max_rot_deg: float = 10.0, max_shift_px: float = 2.0):
+        super().__init__()
+        self.max_rot = float(max_rot_deg)
+        self.max_shift = float(max_shift_px)
+
     def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
-        """Augment coil images.
+        # Expect (C, H, W, 2)
+        if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
+            raise ValueError(f"Augmentation expects (C,H,W,2), got {tuple(coil_images.shape)}")
 
-        Args:
-            coil_images: Coil images with shape (coils, height, width, 2).
+        C, H, W, _ = coil_images.shape
+        # pack to (1, C*2, H, W) so a single grid_sample hits real+imag together
+        x = coil_images.permute(0, 3, 1, 2).reshape(1, C * 2, H, W)
 
-        Returns:
-            Augmented coil images with shape (coils, height, width, 2).
-        """
-        return coil_images
+        # random small rotation (radians) and translation (normalized coords)
+        theta_deg = (torch.empty(1).uniform_(-self.max_rot, self.max_rot).item())
+        theta = math.radians(theta_deg)
+        tx = torch.empty(1).uniform_(-self.max_shift, self.max_shift).item() / (W / 2)
+        ty = torch.empty(1).uniform_(-self.max_shift, self.max_shift).item() / (H / 2)
+
+        cos_t, sin_t = math.cos(theta), math.sin(theta)
+        A = torch.tensor([[cos_t, -sin_t, tx],
+                          [sin_t,  cos_t, ty]], dtype=x.dtype, device=x.device).unsqueeze(0)
+
+        grid = F.affine_grid(A, size=x.size(), align_corners=False)
+        x_aug = F.grid_sample(x, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
+
+        # unpack back to (C, H, W, 2)
+        x_aug = x_aug.reshape(C, 2, H, W).permute(0, 2, 3, 1).contiguous()
+        return x_aug
 
 
 class ToCompatibleTensor(nn.Module):
