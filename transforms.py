@@ -46,41 +46,48 @@ class Normalize(nn.Module):
         return out
 
 
+import torch
+import torch.nn as nn
+
 class EquispacedUndersample(nn.Module):
-    """Transform which undersamples k-space."""
+    """
+    Equispaced undersampling in k-space with a centered low-frequency band.
+
+    Args:
+        acceleration (int): keep every `acceleration`-th line along width
+        center_fraction (float): fraction of width fully sampled at center, (0,1]
+    """
     def __init__(self, acceleration: int, center_fraction: float):
         super().__init__()
-        self.acceleration = acceleration
-        self.center_fraction = center_fraction
+        if acceleration < 1:
+            raise ValueError("acceleration must be >= 1")
+        if not (0.0 < center_fraction <= 1.0):
+            raise ValueError("center_fraction must be in (0, 1]")
+        self.acceleration = int(acceleration)
+        self.center_fraction = float(center_fraction)
 
-    def forward(self, coil_images: torch.Tensor):
-        """Performs undersampling of raw MRI data.
+    def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
+        # Expect (C, H, W, 2). Uses fft/ifft helpers already in this file.
+        if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
+            raise ValueError(f"EquispacedUndersample expects (C,H,W,2), got {tuple(coil_images.shape)}")
 
-        Your method should:
-            1) Convert the input coil images to frequency space (k-space).
-            2) Sample every `acceleration`'th line along the `width` axis.
-               For example, if `acceleration=3`, sample every 3rd line.
-            2) Additionally sample `width*center_fraction` lines from the
-               center of the `width` axis.
-            4) Set all remaining (unsampled) lines to 0.
-            5) Convert from k-space back to image space (coil images).
+        k = fft(coil_images)                 # -> (C, H, W, 2)
+        _, _, W, _ = k.shape
 
-        Args:
-            coil_images: Coil images with shape (coils, height, width, 2).
+        # Build 1D mask over width
+        mask = torch.zeros(W, dtype=torch.bool, device=k.device)
+        mask[:: self.acceleration] = True
 
-        Returns:
-            Undersampled coil images with shape (coils, height, width, 2).
-        """
-        kspace = fft(coil_images)
-        lines = set(range(0, kspace.shape[2], self.acceleration))
-        mid_idx = kspace.shape[2]//2
-        num_low = round(kspace.shape[2]*self.center_fraction)
-        lines = lines | set(range(mid_idx-num_low//2, mid_idx+num_low//2))
-        for line in range(kspace.shape[2]):
-            if line not in lines:
-                kspace[..., line, :] = 0
-        coil_images = ifft(kspace)
-        return coil_images
+        num_low = max(1, int(round(W * self.center_fraction)))
+        mid = W // 2
+        start = max(0, mid - num_low // 2)
+        end = min(W, start + num_low)
+        mask[start:end] = True
+
+        # Apply mask: broadcast to (1,1,W,1) and zero unsampled lines
+        k = k * mask.view(1, 1, W, 1)
+
+        return ifft(k)
 
 
 class Augmentation(nn.Module):
