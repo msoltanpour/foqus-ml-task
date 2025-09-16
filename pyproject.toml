@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "foqus-ml-task"
+version = "0.1.0"
+description = "Foqus ML interview tasks (MRI embedding + contrastive learning)"
+# comment out the next line if you don't have a README yet
+# readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Mohsen Soltanpour" }]
+
+dependencies = [
+  "torch==2.2.2",
+  "numpy==1.26.4",
+  "matplotlib>=3.8",
+  "tqdm>=4.66",
+  "pyyaml>=6.0",
+  "einops>=0.8",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=7.4",
+  "pytest-cov>=4.0",
+  "ruff>=0.5.0",
+  "black>=24.0.0",
+  "pre-commit>=3.6.0",
+  "mypy>=1.8.0",
+  "types-PyYAML",
+]
+
+[project.scripts]
+foqus-train = "foqus_ml_task.cli:main"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = ["E","F","I","B","UP"]
+ignore = ["E501"]
+src = ["foqus_ml_task","tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+minversion = "7.0"
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["foqus_ml_task*"]
+exclude = ["report*", "tests*", "assets*", "configs*"]
