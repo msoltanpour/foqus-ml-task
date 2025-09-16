@@ -3,7 +3,7 @@ import random
 import torch
 from torch.utils.data import Dataset
 
-from transforms import TransformType
+from .transforms import TransformType
 from phantom import RandomPhantomGenerator
 
 
