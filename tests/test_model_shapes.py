@@ -1,8 +1,7 @@
 import pytest
 import torch
 import torch.nn.functional as F
-
-from model import MRIEmbeddingModel
+from foqus_ml_task.model import MRIEmbeddingModel
 
 
 @pytest.mark.parametrize(
