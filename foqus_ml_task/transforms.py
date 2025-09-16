@@ -1,11 +1,16 @@
+import math
 from collections.abc import Callable
+
 import torch
 import torch.nn as nn
-import math
 import torch.nn.functional as F
 
-
-TransformType = Callable[[torch.Tensor, ], torch.Tensor]
+TransformType = Callable[
+    [
+        torch.Tensor,
+    ],
+    torch.Tensor,
+]
 
 
 class Normalize(nn.Module):
@@ -33,7 +38,7 @@ class Normalize(nn.Module):
 
         real = coil_images[..., 0]
         imag = coil_images[..., 1]
-        mag = torch.sqrt(real ** 2 + imag ** 2)
+        mag = torch.sqrt(real**2 + imag**2)
 
         mean = mag.mean()
         std = mag.std()
@@ -49,8 +54,6 @@ class Normalize(nn.Module):
         return out
 
 
-
-
 class EquispacedUndersample(nn.Module):
     """
     Equispaced undersampling in k-space with a centered low-frequency band.
@@ -59,6 +62,7 @@ class EquispacedUndersample(nn.Module):
         acceleration (int): keep every `acceleration`-th line along width
         center_fraction (float): fraction of width fully sampled at center, (0,1]
     """
+
     def __init__(self, acceleration: int, center_fraction: float):
         super().__init__()
         if acceleration < 1:
@@ -71,9 +75,11 @@ class EquispacedUndersample(nn.Module):
     def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
         # Expect (C, H, W, 2). Uses fft/ifft helpers already in this file.
         if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
-            raise ValueError(f"EquispacedUndersample expects (C,H,W,2), got {tuple(coil_images.shape)}")
+            raise ValueError(
+                f"EquispacedUndersample expects (C,H,W,2), got {tuple(coil_images.shape)}"
+            )
 
-        k = fft(coil_images)                 # -> (C, H, W, 2)
+        k = fft(coil_images)  # -> (C, H, W, 2)
         _, _, W, _ = k.shape
 
         # Build 1D mask over width
@@ -90,7 +96,6 @@ class EquispacedUndersample(nn.Module):
         k = k * mask.view(1, 1, W, 1)
 
         return ifft(k)
-
 
 
 class Augmentation(nn.Module):
@@ -116,14 +121,15 @@ class Augmentation(nn.Module):
         x = coil_images.permute(0, 3, 1, 2).reshape(1, C * 2, H, W)
 
         # random small rotation (radians) and translation (normalized coords)
-        theta_deg = (torch.empty(1).uniform_(-self.max_rot, self.max_rot).item())
+        theta_deg = torch.empty(1).uniform_(-self.max_rot, self.max_rot).item()
         theta = math.radians(theta_deg)
         tx = torch.empty(1).uniform_(-self.max_shift, self.max_shift).item() / (W / 2)
         ty = torch.empty(1).uniform_(-self.max_shift, self.max_shift).item() / (H / 2)
 
         cos_t, sin_t = math.cos(theta), math.sin(theta)
-        A = torch.tensor([[cos_t, -sin_t, tx],
-                          [sin_t,  cos_t, ty]], dtype=x.dtype, device=x.device).unsqueeze(0)
+        A = torch.tensor(
+            [[cos_t, -sin_t, tx], [sin_t, cos_t, ty]], dtype=x.dtype, device=x.device
+        ).unsqueeze(0)
 
         grid = F.affine_grid(A, size=x.size(), align_corners=False)
         x_aug = F.grid_sample(x, grid, mode="bilinear", padding_mode="zeros", align_corners=False)
@@ -131,8 +137,6 @@ class Augmentation(nn.Module):
         # unpack back to (C, H, W, 2)
         x_aug = x_aug.reshape(C, 2, H, W).permute(0, 2, 3, 1).contiguous()
         return x_aug
-
-
 
 
 class ToCompatibleTensor(nn.Module):
@@ -144,9 +148,12 @@ class ToCompatibleTensor(nn.Module):
       - Simple, model-agnostic; works with standard Conv2d.
       - Trade-off: doubles channels vs magnitude-only or coil-combined inputs.
     """
+
     def forward(self, coil_images: torch.Tensor) -> torch.Tensor:
         if coil_images.ndim != 4 or coil_images.shape[-1] != 2:
-            raise ValueError(f"ToCompatibleTensor expects (C,H,W,2), got {tuple(coil_images.shape)}")
+            raise ValueError(
+                f"ToCompatibleTensor expects (C,H,W,2), got {tuple(coil_images.shape)}"
+            )
         C, H, W, _ = coil_images.shape
         # (C, H, W, 2) -> (C*2, H, W)
         out = coil_images.permute(0, 3, 1, 2).reshape(C * 2, H, W).contiguous()
@@ -154,6 +161,7 @@ class ToCompatibleTensor(nn.Module):
 
 
 # ========== HELPER/UTILITY FUNCTIONS ==========
+
 
 def fft(
     data: torch.Tensor,

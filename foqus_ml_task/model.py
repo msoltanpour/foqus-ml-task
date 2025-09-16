@@ -40,6 +40,7 @@ Design Choices
 """
 
 from __future__ import annotations
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -70,10 +71,17 @@ class ConvBlock(nn.Module):
         stride:  spatial stride (default: 2 for downsampling)
         p_drop:  dropout prob after activation (0 disables)
     """
+
     def __init__(self, in_ch: int, out_ch: int, *, stride: int = 2, p_drop: float = 0.0):
         super().__init__()
-        self.conv = nn.Conv2d(in_channels=in_ch, out_channels=out_ch,
-                              kernel_size=3, stride=stride, padding=1, bias=False)
+        self.conv = nn.Conv2d(
+            in_channels=in_ch,
+            out_channels=out_ch,
+            kernel_size=3,
+            stride=stride,
+            padding=1,
+            bias=False,
+        )
         self.norm = nn.GroupNorm(_groups_for(out_ch), out_ch)
         self.act = nn.GELU()
         self.drop = nn.Dropout(p_drop) if p_drop and p_drop > 0 else nn.Identity()
@@ -103,6 +111,7 @@ class MRIEmbeddingModel(nn.Module):
         normalize:   apply L2 norm to embeddings in forward() (default: True)
         use_mlp_head:add a 2-layer MLP projection head (default: False)
     """
+
     def __init__(
         self,
         embed_dim: int = 256,
@@ -149,7 +158,7 @@ class MRIEmbeddingModel(nn.Module):
     def _init_weights(self):
         # Kaiming init for convs (when materialized), Xavier for linears
         for m in self.modules():
-            if isinstance(m, (nn.Conv2d, nn.LazyConv2d)):
+            if isinstance(m, nn.Conv2d | nn.LazyConv2d):
                 w = getattr(m, "weight", None)
                 # Skip if LazyConv2d weight is still uninitialized (materializes on first forward)
                 if w is not None and not isinstance(w, UninitializedParameter):

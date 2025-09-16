@@ -1,9 +1,7 @@
 import numpy as np
 
 
-def ellipse_mask(
-    shape: tuple[int, int], x: int, y: int, a: int, b: int
-) -> np.ndarray:
+def ellipse_mask(shape: tuple[int, int], x: int, y: int, a: int, b: int) -> np.ndarray:
     """Creates a boolean mask in the shape of an ellipse.
 
     Args:
@@ -17,20 +15,17 @@ def ellipse_mask(
         Boolean mask of the ellipse.
     """
     # Make ellipse mask
-    yy, xx = np.mgrid[:shape[0], :shape[1]]
+    yy, xx = np.mgrid[: shape[0], : shape[1]]
     x2 = xx.astype(np.float32) - x
     x2 *= x2
     y2 = yy.astype(np.float32) - y
     y2 *= y2
-    mask = x2/(a*a) + y2/(b*b) < 1
+    mask = x2 / (a * a) + y2 / (b * b) < 1
     return mask
 
 
 def generate_birdcage_sensitivities(
-    n_coils: int,
-    matrix_size: int,
-    relative_radius: float = 1.5,
-    normalize: bool = True
+    n_coils: int, matrix_size: int, relative_radius: float = 1.5, normalize: bool = True
 ) -> np.ndarray:
     """Generates birdcage coil sensitivity maps.
 
@@ -50,20 +45,20 @@ def generate_birdcage_sensitivities(
 
     """
     coil_indices = np.arange(n_coils, dtype=np.float32)
-    coil_x = relative_radius*np.cos(coil_indices*(2*np.pi/n_coils))
-    coil_y = relative_radius*np.sin(coil_indices*(2*np.pi/n_coils))
-    coil_phase = -coil_indices*(2*np.pi/n_coils)
+    coil_x = relative_radius * np.cos(coil_indices * (2 * np.pi / n_coils))
+    coil_y = relative_radius * np.sin(coil_indices * (2 * np.pi / n_coils))
+    coil_phase = -coil_indices * (2 * np.pi / n_coils)
 
     yy, xx = np.mgrid[:matrix_size, :matrix_size]
     xx = xx.astype(np.float32)
     yy = yy.astype(np.float32)
 
-    xx_coil = 2*xx[None, ...]/matrix_size - 1 - coil_x[:, None, None]
-    yy_coil = 2*yy[None, ...]/matrix_size - 1 - coil_y[:, None, None]
+    xx_coil = 2 * xx[None, ...] / matrix_size - 1 - coil_x[:, None, None]
+    yy_coil = 2 * yy[None, ...] / matrix_size - 1 - coil_y[:, None, None]
     rr = np.sqrt(xx_coil**2 + yy_coil**2)
     phi = np.arctan2(xx_coil, -yy_coil) + coil_phase[:, None, None]
 
-    sensitivity_maps = (1/rr)*np.exp(1j*phi)
+    sensitivity_maps = (1 / rr) * np.exp(1j * phi)
 
     if normalize:
         rss = root_sum_of_squares(sensitivity_maps, keepdims=True)
@@ -78,7 +73,7 @@ class RandomPhantomGenerator:
         "background": (0, 0.1),
         "brain": (0.4, 0.6),
         "dark_ellipse": (0.1, 0.3),
-        "light_ellipse": (0.7, 0.9)
+        "light_ellipse": (0.7, 0.9),
     }
     HEAD_MAJOR_AX_RANGE = (0.35, 0.5)
     HEAD_ASPECT_RATIO_RANGE = (1.2, 1.6)
@@ -114,48 +109,38 @@ class RandomPhantomGenerator:
         image *= rng.uniform(*self.INTENSITY_RANGES["background"])
 
         # Draw skull and brain
-        brain_mask, x_brain, y_brain, a_brain, b_brain = self._draw_head(
-            image, rng
-        )
+        brain_mask, x_brain, y_brain, a_brain, b_brain = self._draw_head(image, rng)
 
         # Draw random light/dark ellipses in brain
         for _ in range(rng.integers(*self.NUM_ELLIPSE_RANGE, endpoint=True)):
-            a = b_brain*rng.uniform(*self.ELLIPSE_SIZE_RANGE)
-            b = a*rng.uniform(
-                1/self.MAX_ELLIPSE_ASPECT_RATIO, self.MAX_ELLIPSE_ASPECT_RATIO
-            )
+            a = b_brain * rng.uniform(*self.ELLIPSE_SIZE_RANGE)
+            b = a * rng.uniform(1 / self.MAX_ELLIPSE_ASPECT_RATIO, self.MAX_ELLIPSE_ASPECT_RATIO)
             x = rng.uniform(x_brain - a_brain + a, x_brain + a_brain - a)
             y = rng.uniform(y_brain - b_brain + b, y_brain + b_brain - b)
             mask = ellipse_mask(image.shape, x, y, a, b) & brain_mask
 
             intensity_type = "light" if rng.uniform() < 0.5 else "dark"
-            image[mask] = rng.uniform(
-                *self.INTENSITY_RANGES[intensity_type + "_ellipse"]
-            )
+            image[mask] = rng.uniform(*self.INTENSITY_RANGES[intensity_type + "_ellipse"])
 
         # Add random noise
-        image += rng.normal(
-            loc=0, scale=self.NOISE_STD, size=image.shape
-        )
+        image += rng.normal(loc=0, scale=self.NOISE_STD, size=image.shape)
 
         # Generate sensitivity maps and apply them to produce coil images
         sens_maps = generate_birdcage_sensitivities(self.n_coils, self.size)
-        coil_images = sens_maps*image[None]
+        coil_images = sens_maps * image[None]
 
         return coil_images
 
-    def _draw_head(
-        self, image: np.ndarray, rng: np.random.Generator
-    ) -> np.ndarray:
+    def _draw_head(self, image: np.ndarray, rng: np.random.Generator) -> np.ndarray:
         """Draws the skull and brain background."""
-        b = rng.uniform(*self.HEAD_MAJOR_AX_RANGE)*image.shape[1]
-        a = b/rng.uniform(*self.HEAD_ASPECT_RATIO_RANGE)
-        max_dx = (image.shape[1] - 2*a)/8
-        max_dy = (image.shape[0] - 2*b)/8
-        x = image.shape[1]/2 + rng.uniform(-max_dx, max_dx)
-        y = image.shape[0]/2 + rng.uniform(-max_dy, max_dy)
+        b = rng.uniform(*self.HEAD_MAJOR_AX_RANGE) * image.shape[1]
+        a = b / rng.uniform(*self.HEAD_ASPECT_RATIO_RANGE)
+        max_dx = (image.shape[1] - 2 * a) / 8
+        max_dy = (image.shape[0] - 2 * b) / 8
+        x = image.shape[1] / 2 + rng.uniform(-max_dx, max_dx)
+        y = image.shape[0] / 2 + rng.uniform(-max_dy, max_dy)
         outer_mask = ellipse_mask(image.shape, x, y, a, b)
-        a_brain, b_brain = 0.95*a, 0.95*b
+        a_brain, b_brain = 0.95 * a, 0.95 * b
         brain_mask = ellipse_mask(image.shape, x, y, a_brain, b_brain)
         image[outer_mask] = rng.uniform(*self.INTENSITY_RANGES["skull"])
         image[brain_mask] = rng.uniform(*self.INTENSITY_RANGES["brain"])
@@ -176,6 +161,4 @@ def root_sum_of_squares(
         RSS image(s). If `keepdims=True`, the coil axis will become a singleton
             axis, otherwise the coil axis is removed.
     """
-    return np.sqrt(
-        np.sum(np.abs(coil_images)**2, axis=coil_axis, keepdims=keepdims)
-    )
+    return np.sqrt(np.sum(np.abs(coil_images) ** 2, axis=coil_axis, keepdims=keepdims))

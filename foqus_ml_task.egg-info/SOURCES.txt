@@ -1,0 +1,15 @@
+pyproject.toml
+foqus_ml_task/__init__.py
+foqus_ml_task/cli.py
+foqus_ml_task/datasets.py
+foqus_ml_task/model.py
+foqus_ml_task/phantom.py
+foqus_ml_task/train.py
+foqus_ml_task/transforms.py
+foqus_ml_task.egg-info/PKG-INFO
+foqus_ml_task.egg-info/SOURCES.txt
+foqus_ml_task.egg-info/dependency_links.txt
+foqus_ml_task.egg-info/entry_points.txt
+foqus_ml_task.egg-info/requires.txt
+foqus_ml_task.egg-info/top_level.txt
+tests/test_model_shapes.py

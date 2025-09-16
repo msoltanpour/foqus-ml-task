@@ -3,12 +3,13 @@ import random
 import torch
 from torch.utils.data import Dataset
 
+from .phantom import RandomPhantomGenerator
 from .transforms import TransformType
-from phantom import RandomPhantomGenerator
 
 
 class RandomPhantomDataset(Dataset):
     """Simple dataset which generates deterministic phantom head MRI images."""
+
     def __init__(
         self,
         length: int = 1000,
@@ -34,9 +35,7 @@ class RandomPhantomDataset(Dataset):
         self.image_size = image_size
         self.offset = offset
         self.transforms = transforms or []
-        self.generate = RandomPhantomGenerator(
-            n_coils=n_coils, size=image_size
-        ).generate_phantom
+        self.generate = RandomPhantomGenerator(n_coils=n_coils, size=image_size).generate_phantom
 
     def validate_index(self, idx: int) -> int:
         """Ensures an index is valid and non-negative.
@@ -53,8 +52,7 @@ class RandomPhantomDataset(Dataset):
             new_idx += self.length
         if not (0 <= new_idx < self.length):
             raise IndexError(
-                f"Index {idx} is out of range for "
-                f"dataset with length {self.length}"
+                f"Index {idx} is out of range for " f"dataset with length {self.length}"
             )
         return new_idx
 
@@ -87,6 +85,7 @@ class RandomPhantomDataset(Dataset):
 
 class RandomPhantomTripletDataset(Dataset):
     """Dataset providing triplets of images for training embedding models."""
+
     def __init__(
         self,
         length: int = 1000,
@@ -125,9 +124,7 @@ class RandomPhantomTripletDataset(Dataset):
         self.transforms1 = transforms1 or []
         self.transforms2 = transforms2 or []
 
-    def __getitem__(
-        self, item: int
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(self, item: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         """Gets two versions the same an image and a third, different image."""
         # Retrieve the requested sample
         item = self.dataset.validate_index(item)
@@ -147,7 +144,7 @@ class RandomPhantomTripletDataset(Dataset):
             same1 = transform(same1)
         for transform in self.transforms2:
             same2 = transform(same2)
-        for transform in (self.transforms1 if coin_flip else self.transforms2):
+        for transform in self.transforms1 if coin_flip else self.transforms2:
             diff = transform(diff)
 
         return same1, same2, diff

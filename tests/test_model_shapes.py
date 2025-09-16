@@ -1,13 +1,17 @@
+import pytest
 import torch
 import torch.nn.functional as F
-import pytest
+
 from model import MRIEmbeddingModel
 
 
-@pytest.mark.parametrize("coils,H,W,embed_dim", [
-    (4, 128, 128, 128),
-    (8,  96,  80,  256),
-])
+@pytest.mark.parametrize(
+    "coils,H,W,embed_dim",
+    [
+        (4, 128, 128, 128),
+        (8, 96, 80, 256),
+    ],
+)
 def test_shape_and_norm(coils, H, W, embed_dim):
     B = 3
     C_in = 2 * coils  # real+imag per coil
@@ -30,7 +34,7 @@ def test_normalize_toggle():
     m = MRIEmbeddingModel(embed_dim=64, normalize=False)
 
     # raw vs normalized outputs should match manual F.normalize
-    y_raw  = m(x, normalize=False)
+    y_raw = m(x, normalize=False)
     y_norm = m(x, normalize=True)
     assert torch.allclose(F.normalize(y_raw, p=2, dim=1), y_norm, atol=1e-6, rtol=0)
 
@@ -43,7 +47,7 @@ def test_gradients_flow():
     loss = m(x).sum()
     loss.backward()
 
-    total_grad = sum((p.grad.abs().sum().item() for p in m.parameters() if p.grad is not None))
+    total_grad = sum(p.grad.abs().sum().item() for p in m.parameters() if p.grad is not None)
     assert total_grad > 0.0, "No gradients flowed through the network."
 
 
