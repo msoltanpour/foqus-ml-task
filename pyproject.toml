@@ -41,7 +41,8 @@ src = ["foqus_ml_task","tests"]
 
 [tool.ruff.lint]
 select = ["E","F","I","B","UP"]
-ignore = ["E501"]
+ignore = ["E501", "UP038"]
+
 
 [tool.black]
 line-length = 100
