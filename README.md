@@ -1,6 +1,7 @@
 # Foqus ML Task — Contrastive MRI (k-space)
 
-[![CI](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml)
+[![CI](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml/badge.svg?branch=chore/task4_cleanup)](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml)
+
 
 
 
@@ -137,5 +138,3 @@ CI runs **Ruff**, **Black**, and **pytest** on every push (see `.github/workflow
 
 ## 📜 License
 This project is provided for interview evaluation purposes only.
-
-
