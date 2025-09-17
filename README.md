@@ -1,6 +1,9 @@
 # Foqus ML Task — Contrastive MRI (k-space)
 
-[![CI](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml/badge.svg)](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml)
+[![CI](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml)
+
+
+
 
 Production-ready repository for the Foqus ML engineering interview tasks.
 Implements a complete pipeline for MRI phantom data preparation, embedding learning, and contrastive training.
@@ -134,4 +137,5 @@ CI runs **Ruff**, **Black**, and **pytest** on every push (see `.github/workflow
 
 ## 📜 License
 This project is provided for interview evaluation purposes only.
+
 
