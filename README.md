@@ -1,52 +1,85 @@
-# Foqus ML Task
+# Foqus ML Task — Contrastive MRI (k-space)
 
 [![CI](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml/badge.svg)](https://github.com/msoltanpour/foqus-ml-task/actions/workflows/ci.yml)
 
-A compact PyTorch repo for the Foqus ML interview tasks:
-- **Task 1:** Dataset & transforms for synthetic multi-coil MRI phantoms
-- **Task 2:** Small, production-friendly CNN embedding model
-- **Task 3:** Contrastive training (triplet loss) with diagnostics
-- **Task 4:** Cleanup — packaging, CLI, lint/format, tests, CI
+Production-ready repository for the Foqus ML engineering interview tasks.
+Implements a complete pipeline for MRI phantom data preparation, embedding learning, and contrastive training.
 
-## Quickstart
+---
 
+## 📌 Features
+- **Dataset generation** with undersampling, augmentation, normalization, and tensor conversion
+- **Compact CNN embedding model** for complex multi-coil MRI inputs
+- **Triplet-loss contrastive training** with diagnostics and validation metrics
+- **CLI entrypoint (`foqus-train`)** for reproducible training runs
+- **Pre-commit, linting, and unit tests** for production quality
+- **Runbook** for setup, smoke tests, and troubleshooting
+
+---
+
+## 📂 Repository Structure
+```text
+.
+├── foqus_ml_task
+│   ├── __init__.py
+│   ├── cli.py                 # CLI wrapper (foqus-train)
+│   ├── datasets.py            # Phantom dataset + triplet dataset
+│   ├── model.py               # CNN embedding model
+│   ├── phantom.py             # Phantom MRI generator
+│   ├── train.py               # Training script (triplet loss)
+│   ├── transforms.py          # Preprocessing transforms
+│   └── utils/                 # Helper functions
+├── preview_task1_dataset.py   # Dataset preview script
+├── pyproject.toml             # Build system + project metadata
+├── requirements.txt           # Runtime dependencies
+├── requirements-dev.txt       # Dev dependencies
+├── instructions.pdf           # Original task instructions
+├── README.md                  # Project documentation
+└── tmp_run/                   # Example training artifacts
+    ├── task3_best.pt
+    ├── task3_curves.csv
+    └── task3_curves.png
+```
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
 ```bash
-# Python 3.10+ recommended
-python -m venv .venv && source .venv/bin/activate
+git clone https://github.com/msoltanpour/foqus-ml-task.git
+cd foqus-ml-task
+```
 
-# Editable install (+ dev tools)
+### 2. Create and activate a virtual environment
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
 python -m pip install -U pip
+```
+
+### 3. Install dependencies
+```bash
+# For runtime
+pip install -r requirements.txt
+
+# For development (tests, linting, pre-commit)
 pip install -e ".[dev]"
+```
 
-# Smoke test (CPU, 1 epoch)
-foqus-train --epochs 1 --batch-size 8 --num-workers 0 --device cpu --out-dir report/figs/exp1
-Artifacts are written under report/figs/exp1/:
+---
 
-task3_curves.png, task3_curves.csv
+## 🚀 Usage
 
-task3_best.pt (best checkpoint)
+### Dataset Preview (Task 1)
+Generate and visualize sample phantom MRIs:
+```bash
+python preview_task1_dataset.py --num-samples 4 --out-dir report/figs
+```
 
-Package layout
-bash
-Copy code
-foqus-ml-task/
-├─ foqus_ml_task/
-│  ├─ datasets.py           # datasets + triplet dataset
-│  ├─ transforms.py         # Normalize, undersampling, augmentations, tensor adapters
-│  ├─ model.py              # MRIEmbeddingModel (CNN → embedding)
-│  ├─ train.py              # Task 3 training script (argparse inside)
-│  ├─ cli.py                # console entry → foqus-train
-│  └─ phantom.py            # phantom generation helpers
-├─ tests/
-│  └─ test_model_shapes.py  # fast unit tests for model behavior
-├─ report/                  # figures, PDFs, and saved artifacts
-├─ pyproject.toml           # packaging + tooling config
-└─ .github/workflows/ci.yml # CI (lint + tests)
-Training
-foqus-train forwards to foqus_ml_task/train.py (argparse inside). Typical run:
-
-bash
-Copy code
+### Training (Task 3)
+Run a full training job (CPU example):
+```bash
 foqus-train \
   --epochs 20 \
   --train-length 800 --val-length 200 \
@@ -54,39 +87,50 @@ foqus-train \
   --image-size 128 --n-coils 8 \
   --lr 3e-4 --margin 0.2 \
   --out-dir report/figs/exp1
-During training, it prints:
+```
 
-triplet loss and diagnostic stats (d_pos, d_neg, viol%)
+---
 
-Recall@1 on validation
+## 📊 Results & Artifacts
 
-saves curves and best checkpoint under --out-dir
+Each training run produces:
+- **`task3_curves.png`** — loss curves
+- **`task3_curves.csv`** — per-epoch loss log
+- **`task3_best.pt`** — best checkpoint (PyTorch state dict)
 
-Reproducibility
-Deterministic seeds for PyTorch/NumPy in train.py (seed_all)
+Example outputs (from `tmp_run/`):
+```
+tmp_run/
+├── task3_best.pt
+├── task3_curves.csv
+└── task3_curves.png
+```
 
-Validation uses the same transforms as training without augmentation, offset=len(train_ds) and deterministic=True.
+---
 
-Dev workflow
-Lint/format: pre-commit runs Ruff + Black
+## ✅ Testing & CI
 
-bash
-Copy code
-pre-commit install
-pre-commit run -a
-Tests:
-
-bash
-Copy code
+Run all tests:
+```bash
 pytest -q
-Results (examples)
-See report/figs/exp1/:
+```
 
-task3_curves.png — training/validation loss curves
+Format and lint:
+```bash
+pre-commit run -a
+```
 
-task3_best.pt — best model checkpoint
+CI runs **Ruff**, **Black**, and **pytest** on every push (see `.github/workflows/ci.yml`).
 
-task3_curves.csv — CSV log for quick plotting
+---
 
-License
-MIT (or update to your preferred license).
+## 🔧 Troubleshooting
+- `ModuleNotFoundError: foqus_ml_task` → Ensure you installed in editable mode:
+  `pip install -e ".[dev]"` inside the venv.
+- CUDA not available → Use `--device cpu` or install a CUDA build of PyTorch.
+- Pre-commit fixes code automatically. Run until no changes remain.
+
+---
+
+## 📜 License
+This project is provided for interview evaluation purposes only.
