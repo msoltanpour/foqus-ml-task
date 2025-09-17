@@ -89,7 +89,7 @@ foqus-train \
   --batch-size 16 --num-workers 0 \
   --image-size 128 --n-coils 8 \
   --lr 3e-4 --margin 0.2 \
-  --out-dir report/figs/exp1
+  --out-dir report/exp1
 ```
 
 ---
