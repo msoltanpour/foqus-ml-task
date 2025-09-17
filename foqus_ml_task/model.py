@@ -158,7 +158,8 @@ class MRIEmbeddingModel(nn.Module):
     def _init_weights(self):
         # Kaiming init for convs (when materialized), Xavier for linears
         for m in self.modules():
-            if isinstance(m, nn.Conv2d | nn.LazyConv2d):
+            #if isinstance(m, nn.Conv2d | nn.LazyConv2d):
+            if isinstance(m, (nn.Conv2d, nn.LazyConv2d)):
                 w = getattr(m, "weight", None)
                 # Skip if LazyConv2d weight is still uninitialized (materializes on first forward)
                 if w is not None and not isinstance(w, UninitializedParameter):
