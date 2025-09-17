@@ -41,8 +41,8 @@ import torch
 matplotlib.use("Agg")  # ensure headless save
 import matplotlib.pyplot as plt
 
-from datasets import RandomPhantomDataset
-from transforms import Augmentation, EquispacedUndersample, Normalize, ToCompatibleTensor
+from foqus_ml_task.datasets import RandomPhantomDataset
+from foqus_ml_task.transforms import Augmentation, EquispacedUndersample, Normalize, ToCompatibleTensor
 
 
 def parse_args() -> argparse.Namespace:
