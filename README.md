@@ -5,6 +5,7 @@
 
 
 
+
 Production-ready repository for the Foqus ML engineering interview tasks.
 Implements a complete pipeline for MRI phantom data preparation, embedding learning, and contrastive training.
 
