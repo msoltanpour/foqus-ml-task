@@ -8,17 +8,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install
+          python-version: "3.10"
+
+      - name: Install (CPU PyTorch + project)
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
+          PIP_NO_WARN_SCRIPT_LOCATION: "0"
         run: |
           python -m pip install -U pip
+          # Install CPU-only PyTorch first (reliable on GitHub runners)
+          pip install --extra-index-url https://download.pytorch.org/whl/cpu torch==2.2.2
+          # Now install the project (dev extras)
           pip install -e ".[dev]"
+
       - name: Lint (ruff + black --check)
         run: |
           ruff --version
-          ruff .
+          # Use explicit 'check' subcommand (newer ruff)
+          ruff check .
           black --check .
-      - name: Tests
-        run: pytest -q
+
+      - name: Tests (pytest)
+        env:
+          MPLBACKEND: Agg   # prevent display issues in headless CI
+        run: |
+          pytest -q
