@@ -21,7 +21,6 @@ Implements a complete pipeline for MRI phantom data preparation, embedding learn
 ---
 
 ## 📂 Repository Structure
-
 ```text
 .
 ├── foqus_ml_task/               # Main package
@@ -55,7 +54,8 @@ Implements a complete pipeline for MRI phantom data preparation, embedding learn
 └── tests/                       # Unit tests
     ├── conftest.py
     ├── test_model_shapes.py
-    └── __pycache__/...
+    └── __pycache__/
+```
 
 ---
 
