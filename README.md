@@ -137,6 +137,3 @@ CI runs **Ruff**, **Black**, and **pytest** on every push (see `.github/workflow
 
 ## 📜 License
 This project is provided for interview evaluation purposes only.
-
-
-
