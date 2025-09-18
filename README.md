@@ -21,28 +21,41 @@ Implements a complete pipeline for MRI phantom data preparation, embedding learn
 ---
 
 ## 📂 Repository Structure
+
 ```text
 .
-├── foqus_ml_task
+├── foqus_ml_task/               # Main package
 │   ├── __init__.py
-│   ├── cli.py                 # CLI wrapper (foqus-train)
-│   ├── datasets.py            # Phantom dataset + triplet dataset
-│   ├── model.py               # CNN embedding model
-│   ├── phantom.py             # Phantom MRI generator
-│   ├── train.py               # Training script (triplet loss)
-│   ├── transforms.py          # Preprocessing transforms
-│   └── utils/                 # Helper functions
-├── preview_task1_dataset.py   # Dataset preview script
-├── pyproject.toml             # Build system + project metadata
-├── requirements.txt           # Runtime dependencies
-├── requirements-dev.txt       # Dev dependencies
-├── instructions.pdf           # Original task instructions
-├── README.md                  # Project documentation
-└── tmp_run/                   # Example training artifacts
-    ├── task3_best.pt
-    ├── task3_curves.csv
-    └── task3_curves.png
-```
+│   ├── cli.py                   # CLI wrapper (foqus-train)
+│   ├── datasets.py              # Phantom dataset + triplet dataset
+│   ├── model.py                 # CNN embedding model
+│   ├── phantom.py               # Phantom MRI generator
+│   ├── train.py                 # Training script (triplet loss)
+│   ├── transforms.py            # Preprocessing transforms
+│   └── utils/                   # Helper functions (if any)
+│
+├── preview_task1_dataset.py     # Dataset preview script (Task 1)
+├── pyproject.toml               # Build system + project metadata
+├── requirements.txt             # Runtime dependencies
+├── requirements-dev.txt         # Development dependencies
+├── instructions.pdf             # Original task instructions
+├── Foqus_MLE_report.pdf         # Final ML engineering report
+├── README.md                    # Project documentation
+│
+├── report/                      # Training artifacts & figures
+│   ├── exp1/
+│   │   ├── task3_best.pt
+│   │   ├── task3_curves.csv
+│   │   └── task3_curves.png
+│   └── figs/
+│       ├── task1_sample_0.png
+│       ├── task1_sample_1.png
+│       └── task1_sample_2.png
+│
+└── tests/                       # Unit tests
+    ├── conftest.py
+    ├── test_model_shapes.py
+    └── __pycache__/...
 
 ---
 
